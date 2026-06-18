@@ -2,8 +2,8 @@
 Utility Functions: Database Connection and Management
 Handles MySQL database operations with connection pooling
 """
-import MySQLdb
-from MySQLdb import Error
+import pymysql
+from pymysql import Error
 import logging
 from config.config import get_config
 
@@ -34,14 +34,14 @@ class DatabaseConnection:
             config = get_config()
         
         try:
-            connection = MySQLdb.connect(
+            connection = pymysql.connect(
                 host=config.MYSQL_HOST,
                 port=config.MYSQL_PORT,
                 user=config.MYSQL_USER,
-                passwd=config.MYSQL_PASSWORD,
-                db=config.MYSQL_DB,
+                password=config.MYSQL_PASSWORD,
+                database=config.MYSQL_DB,
                 charset='utf8mb4',
-                cursorclass=MySQLdb.cursors.DictCursor
+                cursorclass=pymysql.cursors.DictCursor
             )
             logger.info("Database connection successful")
             return connection
