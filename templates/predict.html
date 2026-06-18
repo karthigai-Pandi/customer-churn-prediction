@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Customer Churn Prediction</h2>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Enter Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <form id="predictionForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="customer_id" class="form-label">Customer ID</label>
+                                <input type="text" class="form-control" id="customer_id" name="customer_id" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="age" class="form-label">Age</label>
+                                <input type="number" class="form-control" id="age" name="age" min="18" max="100" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tenure_months" class="form-label">Tenure (months)</label>
+                                <input type="number" class="form-control" id="tenure_months" name="tenure_months" min="1" max="72" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="monthly_charges" class="form-label">Monthly Charges ($)</label>
+                                <input type="number" class="form-control" id="monthly_charges" name="monthly_charges" step="0.01" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="total_charges" class="form-label">Total Charges ($)</label>
+                                <input type="number" class="form-control" id="total_charges" name="total_charges" step="0.01" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="internet_service" class="form-label">Internet Service</label>
+                                <select class="form-control" id="internet_service" name="internet_service" required>
+                                    <option value="DSL">DSL</option>
+                                    <option value="Fiber optic">Fiber optic</option>
+                                    <option value="No">No</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="contract" class="form-label">Contract Type</label>
+                                <select class="form-control" id="contract" name="contract" required>
+                                    <option value="Month-to-month">Month-to-month</option>
+                                    <option value="One year">One year</option>
+                                    <option value="Two year">Two year</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="gender" class="form-label">Gender</label>
+                                <select class="form-control" id="gender" name="gender" required>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="online_security" class="form-label">Online Security</label>
+                                <select class="form-control" id="online_security" name="online_security" required>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="tech_support" class="form-label">Tech Support</label>
+                                <select class="form-control" id="tech_support" name="tech_support" required>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="streaming_tv" class="form-label">Streaming TV</label>
+                                <select class="form-control" id="streaming_tv" name="streaming_tv" required>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg">Make Prediction</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div id="resultCard" style="display: none;">
+                <div class="card">
+                    <div class="card-header bg-info">
+                        <h5>Prediction Result</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>Will Customer Churn?</h6>
+                        <p id="predictionText" class="display-5 mb-3"></p>
+                        
+                        <h6>Churn Probability</h6>
+                        <div class="progress mb-3">
+                            <div id="probabilityBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <p id="probabilityText" class="text-center"></p>
+
+                        <h6>Risk Level</h6>
+                        <p id="riskText" class="text-center"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Collect form data
+    const formData = new FormData(document.getElementById('predictionForm'));
+    const data = Object.fromEntries(formData);
+    
+    // Convert numeric fields
+    data.age = parseInt(data.age);
+    data.tenure_months = parseInt(data.tenure_months);
+    data.monthly_charges = parseFloat(data.monthly_charges);
+    data.total_charges = parseFloat(data.total_charges);
+    
+    try {
+        // Make API call
+        const response = await fetch('/api/predict', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        // Display result
+        document.getElementById('predictionText').textContent = result.will_churn ? '⚠️ YES' : '✓ NO';
+        document.getElementById('probabilityText').textContent = (result.churn_probability * 100).toFixed(1) + '%';
+        
+        const bar = document.getElementById('probabilityBar');
+        bar.style.width = (result.churn_probability * 100) + '%';
+        bar.className = 'progress-bar ' + (result.churn_probability > 0.6 ? 'bg-danger' : 'bg-success');
+        
+        const riskBadge = document.getElementById('riskText');
+        riskBadge.innerHTML = `<span class="badge ${result.risk_level === 'HIGH' ? 'bg-danger' : 'bg-success'}">${result.risk_level}</span>`;
+        
+        document.getElementById('resultCard').style.display = 'block';
+        
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+});
+</script>
+{% endblock %}

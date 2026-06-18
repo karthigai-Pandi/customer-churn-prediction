@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers - Customer Churn Prediction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="container-fluid py-5">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1><i class="fas fa-users"></i> Customer Management</h1>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                    <i class="fas fa-plus"></i> Add Customer
+                </button>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <form method="GET" class="row">
+                    <div class="col-md-10">
+                        <input type="text" name="search" class="form-control" placeholder="Search by contract ID or gender..." value="{{ search }}">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Customers Table -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        {% if customers %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Contract ID</th>
+                                        <th>Gender</th>
+                                        <th>Age</th>
+                                        <th>Tenure (Months)</th>
+                                        <th>Internet Service</th>
+                                        <th>Monthly Charges</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cust in customers %}
+                                    <tr>
+                                        <td><strong>{{ cust.contract_id }}</strong></td>
+                                        <td>{{ cust.gender }}</td>
+                                        <td>{{ cust.age }}</td>
+                                        <td>{{ cust.tenure_months }}</td>
+                                        <td>{{ cust.internet_service }}</td>
+                                        <td>${{ "%.2f"|format(cust.monthly_charges) }}</td>
+                                        <td>
+                                            <a href="{{ url_for('customer.view_customer', customer_id=cust.customer_id) }}" 
+                                               class="btn btn-sm btn-info" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if total_pages > 1 %}
+                        <nav>
+                            <ul class="pagination justify-content-center">
+                                {% if page > 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1&search={{ search }}">First</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page-1 }}&search={{ search }}">Previous</a>
+                                </li>
+                                {% endif %}
+
+                                {% for p in range(max(1, page-2), min(total_pages+1, page+3)) %}
+                                    {% if p == page %}
+                                    <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ p }}&search={{ search }}">{{ p }}</a>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page < total_pages %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page+1 }}&search={{ search }}">Next</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ total_pages }}&search={{ search }}">Last</a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No customers found.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Customer Modal -->
+    <div class="modal fade" id="addCustomerModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Customer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCustomerForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Contract ID *</label>
+                                <input type="text" class="form-control" name="contract_id" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Gender</label>
+                                <select class="form-control" name="gender">
+                                    <option value="Unknown">Unknown</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Age</label>
+                                <input type="number" class="form-control" name="age" min="18" max="120">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tenure (Months)</label>
+                                <input type="number" class="form-control" name="tenure_months" min="0">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Internet Service</label>
+                                <select class="form-control" name="internet_service">
+                                    <option value="DSL">DSL</option>
+                                    <option value="Fiber optic">Fiber Optic</option>
+                                    <option value="Cable">Cable</option>
+                                    <option value="No">No Internet</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Monthly Charges</label>
+                                <input type="number" class="form-control" name="monthly_charges" min="0" step="0.01">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Total Charges</label>
+                                <input type="number" class="form-control" name="total_charges" min="0" step="0.01">
+                            </div>
+                        </div>
+
+                        <div id="addCustomerAlert"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveCustomerBtn">Save Customer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'footer.html' %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('saveCustomerBtn').addEventListener('click', async () => {
+            const form = document.getElementById('addCustomerForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            const alertDiv = document.getElementById('addCustomerAlert');
+
+            try {
+                const response = await fetch('{{ url_for("customer.create_customer") }}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alertDiv.innerHTML = '<div class="alert alert-success">Customer created successfully!</div>';
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    alertDiv.innerHTML = `<div class="alert alert-danger">${result.message}</div>`;
+                }
+            } catch (error) {
+                alertDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

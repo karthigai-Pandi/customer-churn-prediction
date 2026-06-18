@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Predictions</h5>
+                    <p class="card-text display-4">{{ stats.total_predictions }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">Churn Cases</h5>
+                    <p class="card-text display-4">{{ stats.churn_cases }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">High Risk</h5>
+                    <p class="card-text display-4">{{ stats.high_risk_count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Avg Risk Score</h5>
+                    <p class="card-text display-4">{{ "%.0f" % (stats.avg_risk * 100) }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Recent Predictions</h3>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Customer ID</th>
+                            <th>Will Churn</th>
+                            <th>Probability</th>
+                            <th>Risk Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pred in predictions %}
+                        <tr>
+                            <td>{{ pred.timestamp }}</td>
+                            <td>{{ pred.customer_id }}</td>
+                            <td>
+                                {% if pred.will_churn %}
+                                    <span class="badge bg-danger">YES</span>
+                                {% else %}
+                                    <span class="badge bg-success">NO</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ "%.1f" % (pred.churn_probability * 100) }}%</td>
+                            <td>
+                                <span class="badge {% if pred.risk_level == 'HIGH' %}bg-danger{% else %}bg-success{% endif %}">
+                                    {{ pred.risk_level }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

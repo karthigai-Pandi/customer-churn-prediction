@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Customer Churn Prediction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+</head>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="container-fluid py-5">
+        <h1 class="mb-4"><i class="fas fa-chart-pie"></i> Analytics Dashboard</h1>
+
+        <!-- Key Metrics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Customers</h5>
+                        <h2 class="mb-0">{{ stats.get('total_customers', 0) }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h5 class="card-title">Predictions Made</h5>
+                        <h2 class="mb-0">{{ stats.get('total_predictions', 0) }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-danger">
+                    <div class="card-body">
+                        <h5 class="card-title">High Risk Customers</h5>
+                        <h2 class="mb-0">{{ stats.get('high_risk_count', 0) }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h5 class="card-title">Avg Churn Rate</h5>
+                        <h2 class="mb-0">{{ "%.1f"|format(stats.get('avg_churn_prob', 0) * 100) }}%</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Churn Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="churnChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Risk Level Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Performance -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Model Performance Metrics</h5>
+                        <a href="{{ url_for('analytics.model_performance') }}" class="btn btn-sm btn-outline-primary">
+                            View Details <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Model Name</th>
+                                        <th>Accuracy</th>
+                                        <th>Precision</th>
+                                        <th>Recall</th>
+                                        <th>F1 Score</th>
+                                        <th>ROC-AUC</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for model in model_performance %}
+                                    <tr>
+                                        <td><strong>{{ model.model_name }}</strong></td>
+                                        <td>{{ "%.4f"|format(model.accuracy) }}</td>
+                                        <td>{{ "%.4f"|format(model.precision) }}</td>
+                                        <td>{{ "%.4f"|format(model.recall) }}</td>
+                                        <td>{{ "%.4f"|format(model.f1_score) }}</td>
+                                        <td>{{ "%.4f"|format(model.roc_auc) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'footer.html' %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Churn Distribution Chart
+        const churnCtx = document.getElementById('churnChart').getContext('2d');
+        new Chart(churnCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ churn_distribution|map(attribute='status')|list|tojson }},
+                datasets: [{
+                    data: {{ churn_distribution|map(attribute='count')|list|tojson }},
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Risk Distribution Chart
+        const riskCtx = document.getElementById('riskChart').getContext('2d');
+        new Chart(riskCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ risk_distribution|map(attribute='risk_level')|list|tojson }},
+                datasets: [{
+                    label: 'Number of Customers',
+                    data: {{ risk_distribution|map(attribute='count')|list|tojson }},
+                    backgroundColor: ['#dc3545', '#ffc107', '#28a745'],
+                    borderColor: '#333',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

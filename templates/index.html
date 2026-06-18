@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <div class="card shadow-lg">
+            <div class="card-body p-5">
+                <h1 class="display-4 mb-4">📊 Customer Churn Prediction</h1>
+                
+                <p class="lead">Machine Learning Application for Predicting Customer Churn</p>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">🎯 Make a Prediction</h5>
+                                <p class="card-text">Predict whether a customer will churn using our ML model.</p>
+                                <a href="/login" class="btn btn-primary">Get Started</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">📈 View Analytics</h5>
+                                <p class="card-text">Analyze predictions and customer churn patterns.</p>
+                                <a href="/login" class="btn btn-secondary">Login</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-5 alert alert-info">
+                    <h6>Features:</h6>
+                    <ul>
+                        <li>Real-time churn predictions</li>
+                        <li>Probability and risk assessment</li>
+                        <li>Prediction history tracking</li>
+                        <li>RESTful API for integration</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

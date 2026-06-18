@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Customer Churn Prediction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+</head>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-md-12">
+                <h1 class="mb-4">Welcome, {{ session.get('full_name', 'User') }}! 👋</h1>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="card-text mb-0">Total Customers</p>
+                                <h3 class="mb-0">{{ stats.get('total_customers', 0) }}</h3>
+                            </div>
+                            <i class="fas fa-users fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="card-text mb-0">Total Predictions</p>
+                                <h3 class="mb-0">{{ stats.get('total_predictions', 0) }}</h3>
+                            </div>
+                            <i class="fas fa-chart-bar fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="card-text mb-0">High Risk</p>
+                                <h3 class="mb-0">{{ stats.get('high_risk_count', 0) }}</h3>
+                            </div>
+                            <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="card-text mb-0">Avg Churn Prob</p>
+                                <h3 class="mb-0">{{ "%.2f"|format(stats.get('avg_churn_probability', 0) * 100) }}%</h3>
+                            </div>
+                            <i class="fas fa-percent fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <a href="{{ url_for('prediction.predict_page') }}" class="btn btn-primary me-2">
+                            <i class="fas fa-plus"></i> Make Prediction
+                        </a>
+                        <a href="{{ url_for('prediction.history') }}" class="btn btn-info me-2">
+                            <i class="fas fa-history"></i> View History
+                        </a>
+                        <a href="{{ url_for('customer.list_customers') }}" class="btn btn-secondary me-2">
+                            <i class="fas fa-users"></i> Manage Customers
+                        </a>
+                        <a href="{{ url_for('analytics.dashboard') }}" class="btn btn-success">
+                            <i class="fas fa-chart-pie"></i> Analytics
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Predictions -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Recent Predictions</h5>
+                        <a href="{{ url_for('prediction.history') }}" class="btn btn-sm btn-outline-primary">
+                            View All <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_predictions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Contract ID</th>
+                                        <th>Prediction</th>
+                                        <th>Churn Probability</th>
+                                        <th>Risk Level</th>
+                                        <th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pred in recent_predictions %}
+                                    <tr>
+                                        <td><strong>{{ pred.contract_id }}</strong></td>
+                                        <td>
+                                            {% if pred.churn_prediction == 1 %}
+                                            <span class="badge bg-danger">Will Churn</span>
+                                            {% else %}
+                                            <span class="badge bg-success">Will Retain</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                {% set prob = (pred.churn_probability * 100)|int %}
+                                                <div class="progress-bar {% if prob > 70 %}bg-danger{% elif prob > 40 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                     role="progressbar" style="width: {{ prob }}%;">
+                                                    {{ "%.1f"|format(pred.churn_probability * 100) }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if pred.risk_level == 'High Risk' %}
+                                            <span class="badge bg-danger">{{ pred.risk_level }}</span>
+                                            {% else %}
+                                            <span class="badge bg-success">{{ pred.risk_level }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ pred.prediction_timestamp }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No predictions yet. <a href="{{ url_for('prediction.predict_page') }}">Make your first prediction</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'footer.html' %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
